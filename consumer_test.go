@@ -3,6 +3,7 @@ package kafka_client
 import (
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/stretchr/testify/assert"
@@ -35,6 +36,12 @@ func (cc *TestingConsumerCallback) Handle(c Consumer, m *kafka.Message) error {
 	assert.NoError(cc.t, err)
 
 	assert.Equal(cc.t, cc.count, key)
+
+	if cc.count == messageCount/2 {
+		// simulate slow consumer
+		time.Sleep(maxPollIntervalMs * 0.75 * time.Millisecond)
+	}
+
 	cc.count++
 
 	if cc.count == messageCount {
@@ -44,27 +51,19 @@ func (cc *TestingConsumerCallback) Handle(c Consumer, m *kafka.Message) error {
 	return nil
 }
 
-func TestConsumerAtLeastOnce(t *testing.T) {
+func TestConsumer(t *testing.T) {
 	client := newClientLocalCluster(t)
 
 	go produceTestMessages(t, client)
 
 	cc := newTestingConsumerCallback(t)
-	consumer, err := client.Configure(WithConsumerGroupId(t.Name())).NewConsumer(t.Name(), cc, AtLeastOnceStrategy)
-	require.NoError(t, err)
-
-	consumer.Start(waitTimeoutMs)
-
-	assert.Equal(t, messageCount, cc.count)
-}
-
-func TestConsumerAtMostOnce(t *testing.T) {
-	client := newClientLocalCluster(t)
-
-	go produceTestMessages(t, client)
-
-	cc := newTestingConsumerCallback(t)
-	consumer, err := client.Configure(WithConsumerGroupId(t.Name())).NewConsumer(t.Name(), cc, AtMostOnceStrategy)
+	consumer, err := client.Configure(
+		WithConsumerGroupId(t.Name()),
+		WithConsumerHeartbeatIntervalMs(maxPollIntervalMs/2),
+		WithConsumerMaxPollIntervalMs(maxPollIntervalMs),
+		WithConsumerSessionTimeoutMs(maxPollIntervalMs),
+	).
+		NewConsumer(t.Name(), cc)
 	require.NoError(t, err)
 
 	consumer.Start(waitTimeoutMs)

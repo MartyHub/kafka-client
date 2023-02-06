@@ -23,7 +23,7 @@ container_id=$(podman ps --filter name="${container_name}" --filter status=runni
 
 if [[ ! -n "${container_id}" ]]; then
   echo "${CYAN}Starting Kafka...${NC}"
-  podman-compose up >/dev/null &
+  podman-compose up -d >/dev/null
 fi
 
 while ! podman wait --condition=running "${container_name}" >/dev/null 2>&1; do

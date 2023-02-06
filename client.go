@@ -15,7 +15,10 @@ const (
 	BrokerAddressFamily   = "broker.address.family"
 	EnableAutoOffsetStore = "enable.auto.offset.store"
 	GroupId               = "group.id"
+	HeartbeatIntervalMs   = "heartbeat.interval.ms"
 	LogLevel              = "log_level"
+	MaxPollIntervalMs     = "max.poll.interval.ms"
+	SessionTimeoutMs      = "session.timeout.ms"
 )
 
 const (
@@ -56,6 +59,24 @@ func WithConsumerEnableAutoOffsetStore(value bool) ClientConfigurer {
 func WithConsumerGroupId(value string) ClientConfigurer {
 	return func(configMap kafka.ConfigMap) {
 		configMap[GroupId] = value
+	}
+}
+
+func WithConsumerHeartbeatIntervalMs(value int) ClientConfigurer {
+	return func(configMap kafka.ConfigMap) {
+		configMap[HeartbeatIntervalMs] = value
+	}
+}
+
+func WithConsumerMaxPollIntervalMs(value int) ClientConfigurer {
+	return func(configMap kafka.ConfigMap) {
+		configMap[MaxPollIntervalMs] = value
+	}
+}
+
+func WithConsumerSessionTimeoutMs(value int) ClientConfigurer {
+	return func(configMap kafka.ConfigMap) {
+		configMap[SessionTimeoutMs] = value
 	}
 }
 
@@ -111,13 +132,13 @@ func (c Client) NewAdmin(timeout time.Duration) (Admin, error) {
 	return newAdmin(c.Config, timeout)
 }
 
-func (c Client) NewConsumer(topic string, cc ConsumerCallback, strategy Strategy) (Consumer, error) {
+func (c Client) NewConsumer(topic string, cc ConsumerCallback) (Consumer, error) {
 	config := c.Default(AllowAutoCreateTopics, false).
 		Default(AutoOffsetReset, AutoOffsetResetEarliest).
 		Default(EnableAutoOffsetStore, false).
 		Config
 
-	return newConsumer(config, topic, cc, strategy)
+	return newConsumer(config, topic, cc)
 }
 
 func (c Client) NewProducer(topic string, pc ProducerCallback) (Producer, error) {

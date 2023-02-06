@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	adminTimeout  = 1 * time.Second
-	waitTimeoutMs = 50
-	messageCount  = 50
+	adminTimeout      = 1 * time.Second
+	maxPollIntervalMs = 3_000
+	messageCount      = 50
+	waitTimeoutMs     = 50
 )
 
 func TestMain(m *testing.M) {
@@ -40,7 +41,10 @@ func newTestAdmin(t *testing.T, client Client) Admin {
 }
 
 func newClientLocalCluster(t *testing.T) Client {
-	client := NewClient("localhost:9092", WithLogLevel(LogLevelInfo))
+	client := NewClient(
+		"localhost:9092",
+		WithLogLevel(LogLevelWarning),
+	)
 	a := newTestAdmin(t, client)
 	defer a.Close()
 
