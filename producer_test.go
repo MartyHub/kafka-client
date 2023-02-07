@@ -10,13 +10,14 @@ import (
 )
 
 type TestingProducerCallback struct {
-	count int
-	t     *testing.T
+	keys map[int]bool
+	t    *testing.T
 }
 
 func newTestingProducerCallback(t *testing.T) *TestingProducerCallback {
 	return &TestingProducerCallback{
-		t: t,
+		keys: make(map[int]bool),
+		t:    t,
 	}
 }
 
@@ -31,8 +32,8 @@ func (pc *TestingProducerCallback) Delivered(m *kafka.Message) {
 	key, err := strconv.Atoi(string(m.Key))
 	assert.NoError(pc.t, err)
 
-	assert.Equal(pc.t, pc.count, key)
-	pc.count++
+	assert.False(pc.t, pc.keys[key])
+	pc.keys[key] = true
 }
 
 func produceTestMessages(t *testing.T, client Client) {
@@ -52,8 +53,7 @@ func produceTestMessages(t *testing.T, client Client) {
 	}
 
 	producer.FlushAll(waitTimeoutMs)
-
-	assert.Equal(t, messageCount, pc.count)
+	assert.Equal(t, messageCount, len(pc.keys))
 }
 
 func TestProducer(t *testing.T) {

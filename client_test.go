@@ -42,13 +42,13 @@ func newTestAdmin(t *testing.T, client Client) Admin {
 
 func newClientLocalCluster(t *testing.T) Client {
 	client := NewClient(
-		"localhost:9092",
+		"localhost:9092,localhost:9093",
 		WithLogLevel(LogLevelWarning),
 	)
 	a := newTestAdmin(t, client)
 	defer a.Close()
 
-	if err := a.NewTopicBuilder(t.Name()).WithPartitions(1).WithReplica(1).Create(); err != nil {
+	if err := a.NewTopicBuilder(t.Name()).WithPartitions(2).WithReplica(2).Create(); err != nil {
 		if ke, ok := err.(kafka.Error); ok && ke.Code() != kafka.ErrTopicAlreadyExists {
 			t.Fatal(ke)
 		}

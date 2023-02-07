@@ -2,15 +2,8 @@
 
 set -eu -o pipefail
 
-CYAN=$'\e[0;36m'
-GREEN=$'\e[0;32m'
-NC=$'\e[0m'
-RED=$'\e[0;31m'
-
-if ! type podman >/dev/null; then
-  echo "${RED}[ERROR]${NC} podman is required"
-  exit 1
-fi
+BASEDIR=$(dirname "$0")
+. "${BASEDIR}/env.sh"
 
 machine=kafka-client
 

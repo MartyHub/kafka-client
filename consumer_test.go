@@ -11,13 +11,14 @@ import (
 )
 
 type TestingConsumerCallback struct {
-	count int
-	t     *testing.T
+	keys map[int]bool
+	t    *testing.T
 }
 
 func newTestingConsumerCallback(t *testing.T) *TestingConsumerCallback {
 	return &TestingConsumerCallback{
-		t: t,
+		keys: make(map[int]bool),
+		t:    t,
 	}
 }
 
@@ -35,16 +36,15 @@ func (cc *TestingConsumerCallback) Handle(c Consumer, m *kafka.Message) error {
 	key, err := strconv.Atoi(string(m.Key))
 	assert.NoError(cc.t, err)
 
-	assert.Equal(cc.t, cc.count, key)
+	assert.False(cc.t, cc.keys[key])
+	cc.keys[key] = true
 
-	if cc.count == messageCount/2 {
+	if len(cc.keys) == messageCount/2 {
 		// simulate slow consumer
 		time.Sleep(maxPollIntervalMs * 0.75 * time.Millisecond)
 	}
 
-	cc.count++
-
-	if cc.count == messageCount {
+	if len(cc.keys) == messageCount {
 		c.Stop()
 	}
 
@@ -67,6 +67,5 @@ func TestConsumer(t *testing.T) {
 	require.NoError(t, err)
 
 	consumer.Start(waitTimeoutMs)
-
-	assert.Equal(t, messageCount, cc.count)
+	assert.Equal(t, messageCount, len(cc.keys))
 }
